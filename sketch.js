@@ -9,6 +9,9 @@ let sequence = [];
 let totalCircles = 3;
 
 
+let minDist = 120;
+
+
 
 function setup() {
   createCanvas(640, 480);
@@ -65,10 +68,23 @@ function createCircles(){
 
   for(let i=0;i<totalCircles;i++){
 
+    let valid=false;
     let x,y;
+
+    while(!valid){
 
       x=random(100,width-100);
       y=random(100,height-100);
+
+      valid=true;
+
+      for(let c of circles){
+        if(dist(x,y,c.x,c.y)<minDist){
+          valid=false;
+          break;
+        }
+      }
+    }
 
    
     circles.push({
