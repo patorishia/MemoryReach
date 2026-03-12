@@ -4,6 +4,10 @@ let predictions = [];
 let fingerX = 0;
 let fingerY = 0;
 
+let circles = [];
+let sequence = [];
+let totalCircles = 3;
+
 
 
 function setup() {
@@ -16,6 +20,10 @@ function setup() {
   handPose.on("predict", results => {
     predictions = results;
   });
+
+  // Initialize circles and sequence
+  createCircles();
+  generateSequence();
 }
 
 function modelReady() {
@@ -38,5 +46,52 @@ function draw() {
   fill(255, 0, 0);
   noStroke();
   circle(fingerX, fingerY, 20);
+
+
+  //Draw circles and sequence
+    for(let c of circles){
+    fill(c.color);
+    noStroke();
+    circle(c.x,c.y,c.r*2);
+  }
+
+
 }
+
+
+function createCircles(){
+
+  circles=[];
+
+  for(let i=0;i<totalCircles;i++){
+
+    let x,y;
+
+      x=random(100,width-100);
+      y=random(100,height-100);
+
+   
+    circles.push({
+      x:x,
+      y:y,
+      r:40,
+      color:[random(100,255),random(100,255),random(100,255)]
+    });
+  }
+}
+
+function generateSequence(){
+
+  sequence=[];
+
+  for(let i=0;i<totalCircles;i++){
+    sequence.push(i);
+  }
+
+  shuffle(sequence,true);
+
+
+}
+
+
 
