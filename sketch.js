@@ -11,6 +11,9 @@ let totalCircles = 3;
 
 let minDist = 120;
 
+let playerStep = 0;
+let score = 0;
+
 
 
 function setup() {
@@ -37,30 +40,29 @@ function draw() {
   // Draw the video feed
   image(video, 0, 0);
 
-  
-  //update finger position based on predictions
-  if (predictions.length > 0) {
-    let indexFinger = predictions[0].landmarks[8]; // ponta do indicador
-    fingerX = width - indexFinger[0]; // espelho
-    fingerY = indexFinger[1];
-  }
+  updateFinger();
+  drawFinger();
 
-  //Draw Finger Tips
-  fill(255, 0, 0);
-  noStroke();
-  circle(fingerX, fingerY, 20);
+  drawCircles();
 
-
-  //Draw circles and sequence
-    for(let c of circles){
-    fill(c.color);
-    noStroke();
-    circle(c.x,c.y,c.r*2);
-  }
+  checkTouch();
 
 
 }
 
+function updateFinger(){
+  if(predictions.length>0){
+    let index = predictions[0].landmarks[8];
+    fingerX = width - index[0];
+    fingerY = index[1];
+  }
+}
+
+function drawFinger(){
+  fill(255,0,0);
+  noStroke();
+  circle(fingerX,fingerY,20);
+}
 
 function createCircles(){
 
@@ -81,18 +83,32 @@ function createCircles(){
       for(let c of circles){
         if(dist(x,y,c.x,c.y)<minDist){
           valid=false;
-          break;
         }
       }
     }
 
-   
     circles.push({
       x:x,
       y:y,
       r:40,
-      color:[random(100,255),random(100,255),random(100,255)]
+      color:[random(100,255),random(100,255),random(100,255)],
+      hit:false
     });
+  }
+}
+
+function drawCircles(){
+
+  for(let c of circles){
+
+    if(c.hit){
+      fill(0,255,0);
+    }else{
+      fill(c.color);
+    }
+
+    noStroke();
+    circle(c.x,c.y,c.r*2);
   }
 }
 
@@ -106,7 +122,37 @@ function generateSequence(){
 
   shuffle(sequence,true);
 
+  playerStep=0;
 
+  for(let c of circles){
+    c.hit=false;
+  }
+
+}
+
+
+
+function checkTouch(){
+
+  if(predictions.length==0) return;
+
+  let current = sequence[playerStep];
+  let c = circles[current];
+
+  let d = dist(fingerX,fingerY,c.x,c.y);
+
+  if(d < c.r){
+
+    c.hit=true;
+    playerStep++;
+    score++;
+
+    if(playerStep >= sequence.length){
+
+      createCircles();
+      generateSequence();
+    }
+  }
 }
 
 
