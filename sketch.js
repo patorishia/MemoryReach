@@ -14,7 +14,10 @@ let minDist = 120;
 let playerStep = 0;
 let score = 0;
 
-
+let gameState = "show";
+let showIndex = 0;
+let showTimer = 0;
+let showDelay = 70;
 
 function setup() {
   createCanvas(640, 480);
@@ -30,6 +33,9 @@ function setup() {
   // Initialize circles and sequence
   createCircles();
   generateSequence();
+
+// Start showing the sequence
+  showTimer = frameCount;
 }
 
 function modelReady() {
@@ -43,10 +49,14 @@ function draw() {
   updateFinger();
   drawFinger();
 
-  drawCircles();
+  if(gameState=="show"){
+    showSequence();
+  }
 
-  checkTouch();
-
+  if(gameState=="play"){
+    drawCircles();
+    checkTouch();
+  }
 
 }
 
@@ -128,6 +138,35 @@ function generateSequence(){
     c.hit=false;
   }
 
+
+  gameState="show";
+  showIndex=0;
+  showTimer=frameCount;
+
+}
+
+function showSequence(){
+
+  if(showIndex < sequence.length){
+
+    if(frameCount - showTimer < showDelay){
+
+      let c = circles[sequence[showIndex]];
+
+      fill(c.color);
+      noStroke();
+      circle(c.x,c.y,c.r*2);
+
+    }else{
+
+      showIndex++;
+      showTimer = frameCount;
+    }
+
+  }else{
+
+    gameState="play";
+  }
 }
 
 
