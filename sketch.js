@@ -6,18 +6,20 @@ let startTime = 0;
 let elapsedTime = 0;
 
 // Gesture buttons
-let btnStart  = { x: 450, y: 430, w: 120, h: 40, label: "Start" };
+let btnStart = { x: 450, y: 430, w: 120, h: 40, label: "Start" };
 let btnRepeat = { x: 320, y: 430, w: 120, h: 40, label: "Repeat" };
-let btnStop   = { x: 450, y: 430, w: 120, h: 40, label: "Stop" };
+let btnStop = { x: 450, y: 430, w: 120, h: 40, label: "Stop" };
 
 // ===============================
 // SPEECH RECOGNITION
 // ===============================
 let recognition;
-let voiceEnabled = false;
 
+
+//for button activation delay
 let lastActivation = 0;
 let activationDelay = 800; // ms
+
 
 // ===============================
 // VIDEO + HANDPOSE
@@ -39,7 +41,7 @@ let minDist = 120;
 let playerStep = 0;
 let score = 0;
 
-let gameState = "idle"; 
+let gameState = "idle";
 // idle, show, play, success, fail, pause
 
 let showIndex = 0;
@@ -60,25 +62,22 @@ function setup() {
   handPose = ml5.handpose(video, modelReady);
   handPose.on("predict", results => predictions = results);
 
-  // Initialize game elements
-  createCircles();
-  generateSequence();
-  showTimer = frameCount;
-
-  // Initialize speech recognition
+  // Voice recognition only for starting the game
   if ("webkitSpeechRecognition" in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = false;
 
     recognition.onresult = event => {
       let transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      handleVoiceCommand(transcript);
+      lastVoiceCommand = transcript;
+
+      if (gameState === "idle" && transcript.includes("start") && transcript.includes("game")) {
+        startGame();
+        recognition.stop(); // disable voice after starting
+      }
     };
 
     recognition.start();
-    voiceEnabled = true;
   }
 }
 
@@ -98,11 +97,11 @@ function draw() {
   }
 
   // State rendering
-  if (gameState === "idle")    drawStartScreen();
-  if (gameState === "pause")   drawPauseScreen();
+  if (gameState === "idle") drawStartScreen();
+  if (gameState === "pause") drawPauseScreen();
   if (gameState === "success") drawSuccessScreen();
-  if (gameState === "fail")    drawFailScreen();
-  if (gameState === "show")    showSequence();
+  if (gameState === "fail") drawFailScreen();
+  if (gameState === "show") showSequence();
 
   if (gameState === "play") {
     updateFinger();
@@ -113,6 +112,7 @@ function draw() {
 
   drawBottomBar();
   drawFinger();
+
 }
 
 // ===============================
@@ -122,8 +122,7 @@ function handleVoiceCommand(cmd) {
   if (gameState === "idle" && cmd.includes("start") && cmd.includes("game")) {
     startGame();
   }
-  if (cmd.includes("repeat")) repeatGame();
-  if (cmd.includes("stop") || cmd.includes("end")) stopGame();
+  
 }
 
 // ===============================
@@ -257,10 +256,6 @@ function drawStartScreen() {
   textSize(22);
   text('Say: "start game"', width / 2, height / 2);
 
-  if (!voiceEnabled) {
-    textSize(16);
-    text("Speech recognition not available", width / 2, height / 2 + 60);
-  }
 }
 
 function drawSuccessScreen() {
@@ -293,6 +288,8 @@ function drawPauseScreen() {
 
   textSize(20);
   text("Touch Start to continue", width / 2, height / 2 + 10);
+
+
 }
 
 // ===============================
@@ -315,6 +312,8 @@ function drawBottomBar() {
   text("Score: " + score, spacing * 0.5, barY + 10);
   text("Round: " + round, spacing * 1.5, barY + 10);
   text("Time: " + elapsedTime + "s", spacing * 2.5, barY + 10);
+
+
 
   let buttonY = barY + 70;
 
@@ -342,6 +341,23 @@ function drawBottomBar() {
     drawButton(btnStart);
     checkButtonHover(btnStart, "start");
   }
+
+  if (gameState === "show") {
+    textAlign(CENTER, TOP);
+    textSize(28);
+    fill(255);
+    text("Memorize the sequence", width / 2, 20);
+  }
+
+  if (gameState === "play") {
+    textAlign(CENTER, TOP);
+    textSize(28);
+    fill(255);
+    text("Your turn", width / 2, 20);
+  }
+
+
+
 }
 
 // ===============================
@@ -381,6 +397,8 @@ function checkButtonHover(btn, action) {
 // GAME STATE CONTROL
 // ===============================
 function startGame() {
+  if (recognition) recognition.stop();
+
   if (gameState === "pause") {
     startTime = millis() - elapsedTime * 1000;
     gameState = "play";
